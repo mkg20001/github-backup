@@ -7,6 +7,9 @@
     "JSON.sh": "git+https://github.com/dominictarr/JSON.sh.git",
     "github-repositories": "^3.0.0"
   },
+  "bin":{
+    "github-backup":"github-backup.sh"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
