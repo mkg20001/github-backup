@@ -1,0 +1,22 @@
+{
+  "name": "github-backup",
+  "version": "0.0.1",
+  "description": "Clones all your github repositories as bare repos",
+  "main": "index.sh",
+  "dependencies": {
+    "asyncawait": "^1.0.6",
+    "github-repositories": "^3.0.0",
+    "request-json": "^0.6.1",
+    "shell-escape": "^0.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "github",
+    "backup"
+  ],
+  "author": "Maciej Krüger <mkg20001@gmail.com>",
+  "license": "GPL-3.0"
+}
