@@ -5,10 +5,11 @@
   "main": "github-backup.sh",
   "dependencies": {
     "JSON.sh": "git+https://github.com/dominictarr/JSON.sh.git",
-    "github-repositories": "^3.0.0"
+    "github-repositories": "^3.0.0",
+    "jsonfile": "^2.4.0"
   },
-  "bin":{
-    "github-backup":"github-backup.sh"
+  "bin": {
+    "github-backup": "github-backup.sh"
   },
   "devDependencies": {},
   "scripts": {

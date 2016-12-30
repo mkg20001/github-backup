@@ -4,9 +4,11 @@ usage() {
   echo
   echo "Usage: $0 <username> [stagit] [org]"
   echo
-  echo " stagit - Generate static Git Sites using stagit (requires 'libgit2-dev')"
-  echo " org    - <username> is a GitHub organization"
-  echo " -h     - This help text."
+  echo " stagit        - Generate static Git Sites using stagit (requires 'libgit2-dev')"
+  echo " org           - <username> is a GitHub organization"
+  echo " extended      - Allow extended api calls to get information about forks (you run out of quota soon) (will be saved in USER/repos/REPO.json)"
+  echo " token=<token> - Use an Authorization Token"
+  echo " -h            - This help text."
   echo
 }
 
@@ -25,6 +27,10 @@ parse_options() {
         stagit) isstagit=true
         ;;
         org) isorg=true
+        ;;
+        extended) allowextendedinfo=true
+        ;;
+        token=*) token=${1/"token="/""};hastoken=true
         ;;
         ?*) echo "ERROR: Unknown option."
             usage
@@ -88,6 +94,9 @@ exit_code() {
 
 isstagit=false
 isorg=false
+allowextendedinfo=false
+hastoken=false
+token=""
 
 parse_options "$@"
 
@@ -154,11 +163,11 @@ for i in $seq; do
   let i2=$i+1
   log "Backup $repo ($i2/$length2)"
   repo_get full_name url
+  repo_get clone_url fullurl
   repo_get fork isfork
   repo_get description desc
   repos="$repos $repo"
   repofull="$userb/repos/$repo"
-  fullurl="https://github.com/$url.git"
   repos_f="$repos_f $repofull"
   cd repos
   if [ -e "$repo" ]; then
@@ -172,8 +181,25 @@ for i in $seq; do
     exit_code $? "Failed to clone $fullurl"
   fi
   cd $repofull
-  log3 "Update description"
+  log3 "Update information (extended $allowextendedinfo)"
   echo "$desc" > description
+  echo "$fullurl" > url
+  echo "$user" > owner
+
+  if $allowextendedinfo; then
+    repo_get url repourl
+    prejson_="$prejson"
+    wget -qq "$repourl" -O $userb/repos/$repo.json
+    exit_code $? "Could not get information from $url (Quote exceed?)"
+    repoinfo=$(cat $userb/repos/$repo.json)
+    prejson=$(echo "$repoinfo" | bash $main/node_modules/.bin/JSON.sh)
+    if $isfork; then
+      find_in_json "" '"source","clone_url"' | no_quote > fork_source
+      find_in_json "" '"parent","clone_url"' | no_quote > fork_parent
+    fi
+    prejson="$prejson_"
+  fi
+
   if $isstagit; then
     stafolder="$userb/stagit/$repo"
     stacache="$userb/stagit.cache/$repo"

@@ -1,9 +1,11 @@
 const isOrg = process.argv[3]=="true"
 const githubRepositories = isOrg?require("./org-repos.js"):require('github-repositories')
-const fs = require("fs")
+const jsonfile = require('jsonfile')
+
+jsonfile.spaces = 2
 
 githubRepositories(process.argv[2]).then(data => {
-    fs.writeFileSync(process.cwd()+"/repo.json",JSON.stringify(data,{spaces:2}))
+  jsonfile.writeFileSync(process.cwd()+"/repo.json",data)
 }).catch(err => {
   console.error("ERROR: "+err.toString())
   process.exit(2)
