@@ -1,21 +1,45 @@
 #!/bin/bash
 
-#set -o pipefail
+usage() {
+  echo
+  echo "Usage: $0 <username> [stagit] [org]"
+  echo
+  echo " stagit - Generate static Git Sites using stagit (requires 'libgit2-dev')"
+  echo " org    - <username> is a GitHub organization"
+  echo " -h     - This help text."
+  echo
+}
 
-if [ -z "$1" ]; then
-  echo "Usage: $0 <username> [stagit]"
-  exit 2
-fi
-
-. JSON.sh
-
-tab=$(printf '\t')
-user=$1
-main=$PWD
-mkdir -p $1/repos
-cd $1
-userb=$PWD
-userr=$userb/repo.json
+parse_options() {
+  set -- "$@"
+  local ARGN=$#
+  while [ "$ARGN" -ne 0 ]
+  do
+    if [ -z "$user" ]; then
+      user="$1"
+    else
+      case $1 in
+        -h) usage
+            exit 0
+        ;;
+        stagit) isstagit=true
+        ;;
+        org) isorg=true
+        ;;
+        ?*) echo "ERROR: Unknown option."
+            usage
+            exit 1
+        ;;
+      esac
+    fi
+    shift 1
+    ARGN=$((ARGN-1))
+  done
+  if [ -z "$user" ]; then
+    usage
+    exit 1
+  fi
+}
 
 find_in_json() {
   line=$(echo "$prejson" | grep "^\\[$2\\]")
@@ -62,26 +86,29 @@ exit_code() {
   fi
 }
 
-log "Backup user $user"
+isstagit=false
+isorg=false
 
-if ! [ -e "repo.json" ]; then
-  if [ -e "${user}_repos.json" ]; then
-    mv "${user}_repos.json" "${user}_repos.json.bak"
-  fi
-  log3 "GET /users/$user/repos"
-  node $main/index.js "$user"
-  exit_code $? "Failed to GET /users/$user/repos"
+parse_options "$@"
+
+tab=$(printf '\t')
+user=$1
+main=$(dirname $(readlink -f $0))
+mkdir -p $1/repos
+cd $1
+userb=$PWD
+userr=$userb/repo.json
+
+log "GitHub Backup.sh v1"
+
+if ! [ -e "$main/stagit" ]; then
+  git submodule init
+  exit_code $? "Could not init the submodules"
+  git submodule update
+  exit_code $? "Could not update the submodules"
 fi
 
-isstagit=false
-
-if [ "$2" == "stagit" ]; then
-  if ! [ -e "$main/stagit" ]; then
-    git submodule init
-    exit_code $? "Could not init the submodules"
-    git submodule update
-    exit_code $? "Could not update the submodules"
-  fi
+if $isstagit; then
   if ! [ -e "$main/stagit/stagit" ]; then
     log "Compile stagit"
     make -C $main/stagit
@@ -94,7 +121,25 @@ if [ "$2" == "stagit" ]; then
   log3 "'stagit' enabled"
 fi
 
-prejson=$(cat $userr | tokenize | parse)
+if ! [ -e "$main/node_modules" ]; then
+  log3 "node_modules does not exist"
+  log3 "Running npm i"
+  npm i
+  exit_code $? "npm i failed"
+fi
+
+log "Backup user $user"
+
+if ! [ -e "repo.json" ]; then
+  if [ -e "${user}_repos.json" ]; then
+    mv "${user}_repos.json" "${user}_repos.json.bak"
+  fi
+  log3 "GET /users/$user/repos"
+  node $main/repos.js "$user" "$isorg"
+  exit_code $? "Failed to GET /users/$user/repos"
+fi
+
+prejson=$(cat $userr | bash $main/node_modules/.bin/JSON.sh)
 
 seq=$(echo "$prejson" | grep -o "\\[[0-9][0-9]*\\]" | grep -o "[0-9]*")
 length=$(echo "$seq" | tail -n 1)
@@ -119,11 +164,11 @@ for i in $seq; do
   if [ -e "$repo" ]; then
     log2 "update" "$fullurl"
     cd $repo
-    git fetch --all # 2>&1 | sed 's/^/       => /' #"$fullurl"
+    git fetch --all
     exit_code $? "Failed to update $fullurl"
   else
     log2 "mirror" "$fullurl"
-    git clone --bare --mirror "$fullurl" "$repo" # 2>&1 | sed 's/^/       => /'
+    git clone --bare --mirror "$fullurl" "$repo"
     exit_code $? "Failed to clone $fullurl"
   fi
   cd $repofull

@@ -4,10 +4,8 @@
   "description": "Backup all your GitHub repos",
   "main": "github-backup.sh",
   "dependencies": {
-    "asyncawait": "^1.0.6",
-    "github-repositories": "^3.0.0",
-    "request-json": "^0.6.1",
-    "shell-escape": "^0.2.0"
+    "JSON.sh": "git+https://github.com/dominictarr/JSON.sh.git",
+    "github-repositories": "^3.0.0"
   },
   "devDependencies": {},
   "scripts": {
