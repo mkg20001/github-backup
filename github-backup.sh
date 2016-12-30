@@ -3,7 +3,7 @@
 #set -o pipefail
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <user>"
+  echo "Usage: $0 <username> [stagit]"
   exit 2
 fi
 

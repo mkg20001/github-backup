@@ -1,8 +1,8 @@
 {
   "name": "github-backup",
   "version": "0.0.1",
-  "description": "Clones all your github repositories as bare repos",
-  "main": "index.sh",
+  "description": "Backup all your GitHub repos",
+  "main": "github-backup.sh",
   "dependencies": {
     "asyncawait": "^1.0.6",
     "github-repositories": "^3.0.0",
