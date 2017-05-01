@@ -6,6 +6,7 @@ usage() {
   echo
   echo " stagit        - Generate static Git Sites using stagit (requires 'libgit2-dev')"
   echo " org           - <username> is a GitHub organization"
+  echo " trash         - Move old repos into <username>.trash"
   echo " extended      - Allow extended api calls to get information about forks (you run out of quota soon) (will be saved in USER/repos/REPO.json)"
   echo " token=<token> - Use an Authorization Token"
   echo " -h            - This help text."
@@ -31,6 +32,8 @@ parse_options() {
         extended) allowextendedinfo=true
         ;;
         token=*) token=${1/"token="/""};hastoken=true
+        ;;
+        trash) istrashmode=true
         ;;
         ?*) echo "ERROR: Unknown option."
             usage
@@ -93,6 +96,7 @@ exit_code() {
 }
 
 isstagit=false
+istrashmode=false
 isorg=false
 allowextendedinfo=false
 hastoken=false
@@ -220,6 +224,28 @@ if $isstagit; then
 fi
 
 log "Cleanup"
+
+if $istrashmode; then
+  trash="$userb/trash"
+  log "Moving old repos to $trash"
+  mkdir -p "$trash"
+  for r in repos stagit stagit.cache; do
+    for f in $(dir -w 1 "$userb/$r"); do
+      if [ -d "$userb/$r/$f" ]; then
+        dodel=true
+        for rr in $repos; do
+          if [ "$rr" == "$f" ]; then
+            dodel=false
+          fi
+        done
+        if $dodel; then
+          log2 "trash" "$r for $f"
+          mv "$userb/$r/$f" "$trash/$f.$r"
+        fi
+      fi
+    done
+  done
+fi
 
 cd $userb
 
