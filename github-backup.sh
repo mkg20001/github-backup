@@ -87,7 +87,7 @@ log3() {
 
 exit_code() {
   if [ $1 -ne 0 ]; then
-    echo "$2!"
+    echo "ERROR: $2!"
     exit $1
   fi
 }
