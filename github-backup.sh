@@ -192,16 +192,25 @@ for i in $seq; do
 
   if $allowextendedinfo; then
     repo_get url repourl
-    prejson_="$prejson"
     wget -qq "$repourl" -O $userb/repos/$repo.json
-    exit_code $? "Could not get information from $url (Quote exceed?)"
+    exit_code $? "Could not get information from $url (Quota exceed?)"
+  fi
+
+  if [ -e "$userb/repos/$repo.json" ]; then
+    prejson_="$prejson"
     repoinfo=$(cat $userb/repos/$repo.json)
     prejson=$(echo "$repoinfo" | bash $main/node_modules/.bin/JSON.sh)
+
     if $isfork; then
       find_in_json "" '"source","clone_url"' | no_quote > fork_source
       find_in_json "" '"parent","clone_url"' | no_quote > fork_parent
     fi
+    
     prejson="$prejson_"
+  else
+    if $isfork; then
+      echo "[FORK] $desc" > description
+    fi
   fi
 
   if $isstagit; then
