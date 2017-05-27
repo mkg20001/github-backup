@@ -174,16 +174,29 @@ for i in $seq; do
   repofull="$userb/repos/$repo"
   repos_f="$repos_f $repofull"
   cd repos
+
+  needupdate=false
+
   if [ -e "$repo" ]; then
     log2 "update" "$fullurl"
     cd $repo
+    pre_com=$(git log --all -q && git tag)
+    exit_code $? "Failed to update $fullurl"
+
     git fetch --all
     exit_code $? "Failed to update $fullurl"
+
+    post_com=$(git log --all -q && git tag)
+    exit_code $? "Failed to update $fullurl"
+
+    [ "$post_com" != "$pre_com" ] && needupdate=true
   else
     log2 "mirror" "$fullurl"
     git clone --bare --mirror "$fullurl" "$repo"
     exit_code $? "Failed to clone $fullurl"
+    needupdate=true
   fi
+
   cd $repofull
   log3 "Update information (extended $allowextendedinfo)"
   echo "$desc" > description
@@ -205,7 +218,7 @@ for i in $seq; do
       find_in_json "" '"source","clone_url"' | no_quote > fork_source
       find_in_json "" '"parent","clone_url"' | no_quote > fork_parent
     fi
-    
+
     prejson="$prejson_"
   else
     if $isfork; then
@@ -213,14 +226,19 @@ for i in $seq; do
     fi
   fi
 
-  if $isstagit; then
-    stafolder="$userb/stagit/$repo"
-    stacache="$userb/stagit.cache/$repo"
-    log3 "Update stagit"
-    mkdir -p $stafolder
-    cd $stafolder
-    $stagit -c $stacache $repofull
+  if $needupdate; then
+    if $isstagit; then
+      stafolder="$userb/stagit/$repo"
+      stacache="$userb/stagit.cache/$repo"
+      log3 "Update stagit"
+      mkdir -p $stafolder
+      cd $stafolder
+      $stagit -c $stacache $repofull
+    fi
+  else
+    log3 "Skip updating"
   fi
+
   log3 "DONE!"
   cd $userb
 done
