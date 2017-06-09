@@ -95,6 +95,15 @@ exit_code() {
   fi
 }
 
+git_pipe() {
+  git log --all -q
+  git tag
+}
+
+git_ver() {
+  git_pipe | sha256sum
+}
+
 isstagit=false
 istrashmode=false
 isorg=false
@@ -180,13 +189,13 @@ for i in $seq; do
   if [ -e "$repo" ]; then
     log2 "update" "$fullurl"
     cd $repo
-    pre_com=$(git log --all -q && git tag)
+    pre_com=$(git_ver)
     exit_code $? "Failed to update $fullurl"
 
     git fetch --all
     exit_code $? "Failed to update $fullurl"
 
-    post_com=$(git log --all -q && git tag)
+    post_com=$(git_ver)
     exit_code $? "Failed to update $fullurl"
 
     [ "$post_com" != "$pre_com" ] && needupdate=true
@@ -196,6 +205,9 @@ for i in $seq; do
     exit_code $? "Failed to clone $fullurl"
     needupdate=true
   fi
+
+  cd $repofull
+  ver=$(git_ver)
 
   cd $repofull
   log3 "Update information (extended $allowextendedinfo)"
@@ -226,14 +238,21 @@ for i in $seq; do
     fi
   fi
 
+  stafolder="$userb/stagit/$repo"
+  stacache="$userb/stagit.cache/$repo"
+
+  staver=$(cat $stacache.ver 2> /dev/null)
+  $isstagit && [ ! -e $stafolder ] && needupdate=true
+  $isstagit && [ "$staver" != "$ver" ] && needupdate=true
+
   if $needupdate; then
     if $isstagit; then
-      stafolder="$userb/stagit/$repo"
-      stacache="$userb/stagit.cache/$repo"
       log3 "Update stagit"
       mkdir -p $stafolder
       cd $stafolder
       $stagit -c $stacache $repofull
+      exit_code $? "Stagit failed"
+      echo "$ver" > $stacache.ver
     fi
   else
     log3 "Skip updating"
