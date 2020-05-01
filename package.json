@@ -6,19 +6,23 @@
   "dependencies": {
     "JSON.sh": "git+https://github.com/dominictarr/JSON.sh.git",
     "github-repositories": "^3.0.0",
-    "jsonfile": "^2.4.0"
+    "jsonfile": "^2.4.0",
+    "snyk": "^1.316.1"
   },
   "bin": {
     "github-backup": "github-backup.sh"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "keywords": [
     "github",
     "backup"
   ],
   "author": "Maciej Krüger <mkg20001@gmail.com>",
-  "license": "GPL-3.0"
+  "license": "GPL-3.0",
+  "snyk": true
 }
